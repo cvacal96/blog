@@ -9,16 +9,21 @@ pwd
 
 echo " -----> Patching SQLite (temporary workaround)..."
 cd /tmp
-curl -fL -A "Mozilla/5.0" -o sqlite-autoconf-3440000.tar.gz https://www.sqlite.org/2024/sqlite-autoconf-3440000.tar.gz \
+
+# Download latest stable SQLite 3.50.1 source from 2025
+curl -fL -A "Mozilla/5.0" -o sqlite-autoconf-3500100.tar.gz https://www.sqlite.org/2025/sqlite-autoconf-3500100.tar.gz \
   || { echo "Failed to download SQLite source. Exiting."; exit 1; }
 
-tar xzf sqlite-autoconf-3440000.tar.gz \
+# Extract
+tar xzf sqlite-autoconf-3500100.tar.gz \
   || { echo "Failed to extract SQLite archive. Exiting."; exit 1; }
 
-cd sqlite-autoconf-3440000
+# Build and install
+cd sqlite-autoconf-3500100
 ./configure --prefix=/opt/sqlite && make && make install \
   || { echo "SQLite build failed. Exiting."; exit 1; }
 
+# Export environment variables
 export PATH="/opt/sqlite/bin:$PATH"
 export LD_LIBRARY_PATH="/opt/sqlite/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="/opt/sqlite/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -27,8 +32,9 @@ echo " -----> SQLite version:"
 sqlite3 --version || { echo "SQLite not installed correctly. Exiting."; exit 1; }
 
 echo " -----> Cleaning up build files..."
-rm -rf /tmp/sqlite-autoconf-3440000*
+rm -rf /tmp/sqlite-autoconf-3500100*
 
+# Prepare media directory if using persistent volume
 if [ -d /opt/app-root/data ]; then
     if [ ! -d /opt/app-root/data/media/images ]; then
         echo " -----> Creating directory for uploaded image files."

@@ -1,15 +1,12 @@
 #!/bin/bash
+set -e
 
-set -eo pipefail
+# Navega al directorio donde está la app
+cd /opt/app-root/src
 
-# If a wheelhouse cache directory exists, the repository was used as
-# input to a wheelhouse build, to build Python wheels for required packages.
-# In this case fall through to executing the original 'run' script.
+# Ejecutar comandos de migración y recolectar estáticos solo si quieres (comenta si no)
+# python manage.py migrate --noinput
+# python manage.py collectstatic --noinput
 
-if [ -d /opt/app-root/wheelhouse ]; then
-    exec /opt/app-root/s2i/run
-fi
-
-# Run the deployment phase with support for action hooks.
-
-exec powershift image run
+# Arranca el servidor Django (puedes adaptarlo a tu entorno)
+exec python manage.py runserver 0.0.0.0:8080

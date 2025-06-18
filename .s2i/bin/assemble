@@ -1,24 +1,18 @@
 #!/bin/bash
+set -e
 
-set -eo pipefail
+# Limpia la carpeta de trabajo por si queda algo (opcional)
+rm -rf /opt/app-root/src/*
 
-# If a wheelhouse cache directory exists, the repository is being used as
-# input to a wheelhouse build, to build Python wheels for required packages.
-# In this case fall through to executing the original 'assemble' script.
+# Mueve el código fuente que s2i inyecta en /tmp/src a la carpeta de trabajo
+mv /tmp/src/* /opt/app-root/src/
 
-if [ -d /opt/app-root/wheelhouse ]; then
-    exec /opt/app-root/s2i/assemble
-fi
+# Opcional: si usas git y quieres limpiar archivos ocultos
+rm -rf /opt/app-root/src/.git*
 
-# Install 'powershift-cli[image]' package to add support for action hooks.
+# Instalar las dependencias de Python desde requirements.txt
+pip install --no-cache-dir -r /opt/app-root/src/requirements.txt
 
-pip install powershift-cli[image] --trusted-host pypi.org
-
-# Delete existing .s2i if it exists in current directory to avoid mv error
-if [ -d .s2i ]; then
-    rm -rf .s2i
-fi
-
-# Run the build phase with support for action hooks.
-
-exec powershift image assemble
+# Cambiar permisos para evitar problemas en OpenShift
+chown -R 1001:0 /opt/app-root/src
+chmod -R g+w /opt/app-root/src

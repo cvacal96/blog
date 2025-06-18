@@ -1,4 +1,4 @@
-FROM centos/python-311-centos7:latest
+FROM python:3.11-slim
 
 USER root
 

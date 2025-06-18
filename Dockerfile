@@ -19,7 +19,7 @@ RUN rm -rf /tmp/src/.git* && \
     chgrp -R 0 /tmp/src && \
     chmod -R g+w /tmp/src
 
-USER 1001
+USER root
 
 # Set required environment variables
 ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
@@ -28,7 +28,11 @@ ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
     DISABLE_MIGRATE=1
 
 # Assemble application using custom scripts
+
 RUN /tmp/scripts/assemble
+
+USER 1001
+
 
 # Start the app
 CMD [ "/tmp/scripts/run" ]

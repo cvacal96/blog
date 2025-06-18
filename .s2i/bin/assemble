@@ -21,4 +21,4 @@ fi
 
 # Run the build phase with support for action hooks.
 
-exec powersh    ift image assemble
+exec powershift image assemble

@@ -235,3 +235,6 @@ if os.environ.get('MOD_WSGI_DEBUG_MODE'):
 
 if os.environ.get('MOD_WSGI_DEBUGGER_ENABLED'):
     DEBUG_PROPAGATE_EXCEPTIONS = True
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

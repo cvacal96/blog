@@ -9,47 +9,59 @@
 set -eo pipefail
 
 # Dump out the set of environment variables which were used by the build.
-
 echo " -----> Environment variables set for the deployed application."
-
 env
 
 # Dump out the name of the current working directory.
-
 echo " -----> Current working directory."
-
 pwd
 
+# Optional: Install required build tools if the base image supports yum (for RHEL/CentOS)
+if command -v yum >/dev/null 2>&1; then
+    echo " -----> Installing required build dependencies..."
+    yum install -y gcc make tar gzip wget || echo "Warning: yum install failed or not needed."
+fi
+
+# Patch SQLite with newer version
 echo " -----> Patching SQLite (temporary workaround)..."
 cd /tmp
-curl -L -A "Mozilla/5.0" -o sqlite-autoconf-3410200.tar.gz https://www.sqlite.org/2024/sqlite-autoconf-3410200.tar.gz
-tar xzf sqlite-autoconf-3410200.tar.gz
-cd sqlite-autoconf-3410200
-./configure --prefix=/opt/sqlite && make && make install
 
+# Download SQLite source
+curl -fL -A "Mozilla/5.0" -o sqlite-autoconf-3410200.tar.gz https://www.sqlite.org/2024/sqlite-autoconf-3410200.tar.gz \
+  || { echo "Failed to download SQLite source. Exiting."; exit 1; }
+
+# Extract
+tar xzf sqlite-autoconf-3410200.tar.gz \
+  || { echo "Failed to extract SQLite archive. Exiting."; exit 1; }
+
+cd sqlite-autoconf-3410200
+
+# Compile and install
+./configure --prefix=/opt/sqlite && make && make install \
+  || { echo "SQLite build failed. Exiting."; exit 1; }
+
+# Set environment variables
 export PATH="/opt/sqlite/bin:$PATH"
 export LD_LIBRARY_PATH="/opt/sqlite/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="/opt/sqlite/lib/pkgconfig:$PKG_CONFIG_PATH"
 
+# Show installed version
 echo " -----> SQLite version:"
-sqlite3 --version
+sqlite3 --version || { echo "SQLite not installed correctly. Exiting."; exit 1; }
 
-# If necessaary create the media directory if persistent volume being used.
+# Clean up
+echo " -----> Cleaning up build files..."
+rm -rf /tmp/sqlite-autoconf-3410200*
 
+# Create media directory if needed
 if [ -d /opt/app-root/data ]; then
     if [ ! -d /opt/app-root/data/media/images ]; then
         echo " -----> Creating directory for uploaded image files."
-
         mkdir -p /opt/app-root/data/media/images
     fi
 fi
 
-# Run the application specific deploy steps for this project. If an
-# external database is being used, or a persistent volume is used for
-# SQLite, only perform the database migration and do not run full setup.
-# When a persistent database is used the setup to add super user and
-# pre-load data would need to be run as manual step.
-
+# Run application-specific deploy logic
 if [ x"$DATABASE_HOST" != x"" ]; then
     powershift image migrate
 else
@@ -58,20 +70,18 @@ else
     else
         if [ -d /opt/app-root/data ]; then
             if [ ! -f /opt/app-root/data/db.sqlite3 ]; then
-               powershift image migrate
+                powershift image migrate
             fi
         else
             if [ ! -f /opt/app-root/src/db.sqlite3 ]; then
                 DJANGO_ADMIN_USERNAME=developer \
-                   DJANGO_ADMIN_EMAIL=developer@example.com \
-                   DJANGO_ADMIN_PASSWORD=developer powershift image setup
+                DJANGO_ADMIN_EMAIL=developer@example.com \
+                DJANGO_ADMIN_PASSWORD=developer powershift image setup
             fi
         fi
     fi
 fi
 
 # Dump out the contents of the current working directory.
-
 echo " -----> Contents of the current working directory after build run."
-
 ls -lasR . || true

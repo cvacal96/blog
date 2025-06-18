@@ -1,59 +1,34 @@
 #!/bin/bash
-
-# This is a 'deploy' action hook script. This script must be executable
-# and will be run by the S2I process just before the original S2I 'run'
-# script is run. This script is to allow a user to run any final steps
-# just before the application is to be started. This can include running
-# background tasks.
-
 set -eo pipefail
 
-# Dump out the set of environment variables which were used by the build.
 echo " -----> Environment variables set for the deployed application."
 env
 
-# Dump out the name of the current working directory.
 echo " -----> Current working directory."
 pwd
 
-# Optional: Install required build tools if the base image supports yum (for RHEL/CentOS)
-if command -v yum >/dev/null 2>&1; then
-    echo " -----> Installing required build dependencies..."
-    yum install -y gcc make tar gzip wget || echo "Warning: yum install failed or not needed."
-fi
-
-# Patch SQLite with newer version
 echo " -----> Patching SQLite (temporary workaround)..."
 cd /tmp
-
-# Download SQLite source
-curl -fL -A "Mozilla/5.0" -o sqlite-autoconf-3410200.tar.gz https://www.sqlite.org/2024/sqlite-autoconf-3410200.tar.gz \
+curl -fL -A "Mozilla/5.0" -o sqlite-autoconf-3440000.tar.gz https://www.sqlite.org/2024/sqlite-autoconf-3440000.tar.gz \
   || { echo "Failed to download SQLite source. Exiting."; exit 1; }
 
-# Extract
-tar xzf sqlite-autoconf-3410200.tar.gz \
+tar xzf sqlite-autoconf-3440000.tar.gz \
   || { echo "Failed to extract SQLite archive. Exiting."; exit 1; }
 
-cd sqlite-autoconf-3410200
-
-# Compile and install
+cd sqlite-autoconf-3440000
 ./configure --prefix=/opt/sqlite && make && make install \
   || { echo "SQLite build failed. Exiting."; exit 1; }
 
-# Set environment variables
 export PATH="/opt/sqlite/bin:$PATH"
 export LD_LIBRARY_PATH="/opt/sqlite/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="/opt/sqlite/lib/pkgconfig:$PKG_CONFIG_PATH"
 
-# Show installed version
 echo " -----> SQLite version:"
 sqlite3 --version || { echo "SQLite not installed correctly. Exiting."; exit 1; }
 
-# Clean up
 echo " -----> Cleaning up build files..."
-rm -rf /tmp/sqlite-autoconf-3410200*
+rm -rf /tmp/sqlite-autoconf-3440000*
 
-# Create media directory if needed
 if [ -d /opt/app-root/data ]; then
     if [ ! -d /opt/app-root/data/media/images ]; then
         echo " -----> Creating directory for uploaded image files."
@@ -61,27 +36,20 @@ if [ -d /opt/app-root/data ]; then
     fi
 fi
 
-# Run application-specific deploy logic
+# Application-specific deploy logic
 if [ x"$DATABASE_HOST" != x"" ]; then
     powershift image migrate
-else
-    if [ x"$DATABASE_URL" != x"" -o -d /opt/app-root/secrets/database ]; then
+elif [ x"$DATABASE_URL" != x"" -o -d /opt/app-root/secrets/database ]; then
+    powershift image migrate
+elif [ -d /opt/app-root/data ]; then
+    if [ ! -f /opt/app-root/data/db.sqlite3 ]; then
         powershift image migrate
-    else
-        if [ -d /opt/app-root/data ]; then
-            if [ ! -f /opt/app-root/data/db.sqlite3 ]; then
-                powershift image migrate
-            fi
-        else
-            if [ ! -f /opt/app-root/src/db.sqlite3 ]; then
-                DJANGO_ADMIN_USERNAME=developer \
-                DJANGO_ADMIN_EMAIL=developer@example.com \
-                DJANGO_ADMIN_PASSWORD=developer powershift image setup
-            fi
-        fi
     fi
+elif [ ! -f /opt/app-root/src/db.sqlite3 ]; then
+    DJANGO_ADMIN_USERNAME=developer \
+    DJANGO_ADMIN_EMAIL=developer@example.com \
+    DJANGO_ADMIN_PASSWORD=developer powershift image setup
 fi
 
-# Dump out the contents of the current working directory.
 echo " -----> Contents of the current working directory after build run."
 ls -lasR . || true

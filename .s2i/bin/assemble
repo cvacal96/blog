@@ -14,6 +14,11 @@ fi
 
 pip install powershift-cli[image] --trusted-host pypi.org
 
+# Delete existing .s2i if it exists in current directory to avoid mv error
+if [ -d .s2i ]; then
+    rm -rf .s2i
+fi
+
 # Run the build phase with support for action hooks.
 
-exec powershift image assemble
+exec powersh    ift image assemble

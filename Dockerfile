@@ -7,8 +7,13 @@ RUN yum install -y \
         sqlite-devel curl \
     && yum clean all
 
-# Copia todo el código fuente directamente (sin usar S2I)
+# Copia todo el código fuente al contenedor
 COPY . /opt/app-root/src
+
+# Instala pip y las dependencias listadas en requirements.txt
+RUN python3 -m ensurepip && \
+    python3 -m pip install --upgrade pip setuptools wheel && \
+    python3 -m pip install -r /opt/app-root/src/requirements.txt
 
 RUN chown -R 1001:0 /opt/app-root/src && \
     chmod -R g+w /opt/app-root/src
@@ -21,4 +26,4 @@ ENV PATH=$PATH:/root/.local/bin \
 
 USER 1001
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

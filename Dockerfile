@@ -24,4 +24,4 @@ ENV PATH=$PATH:/root/.local/bin \
 
 USER 1001
 
-CMD ["/bin/bash"]
+CMD ["sleep", "3600"]

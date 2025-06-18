@@ -2,37 +2,38 @@ FROM python:3.11-slim
 
 USER root
 
-# Install required build tools and SQLite headers using APT (Debian-based package manager)
+# Install required build tools and SQLite headers using APT
 RUN apt-get update && \
     apt-get install -y gcc make automake autoconf libtool libsqlite3-dev curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy project source into the image
-COPY . /tmp/src
+# Set working directory
+WORKDIR /opt/app-root/src
 
-# Move S2I scripts to a custom location
-RUN mv /tmp/src/.s2i/bin /tmp/scripts
+# Copy source code to the correct location
+COPY . /opt/app-root/src
 
-# Clean up .git files and fix permissions for OpenShift compatibility
-RUN rm -rf /tmp/src/.git* && \
-    chown -R 1001 /tmp/src && \
-    chgrp -R 0 /tmp/src && \
-    chmod -R g+w /tmp/src
+# Move S2I scripts
+RUN mv .s2i/bin /tmp/scripts
 
-USER root
+# Fix permissions
+RUN rm -rf .git* && \
+    chown -R 1001 /opt/app-root/src && \
+    chgrp -R 0 /opt/app-root/src && \
+    chmod -R g+w /opt/app-root/src
 
-# Set required environment variables
+# Set environment variables
 ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
     S2I_BASH_ENV=/opt/app-root/etc/scl_enable \
     DISABLE_COLLECTSTATIC=1 \
-    DISABLE_MIGRATE=1
+    DISABLE_MIGRATE=1 \
+    PATH=$PATH:/root/.local/bin
 
-# Assemble application using custom scripts
-
+# Assemble the app (run as root to avoid permission issues during pip install)
 RUN /tmp/scripts/assemble
 
+# Switch to default non-root user
 USER 1001
 
-
-# Start the app
+# Run the app
 CMD [ "/tmp/scripts/run" ]

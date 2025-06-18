@@ -29,6 +29,10 @@ ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
     DISABLE_MIGRATE=1 \
     PATH=$PATH:/root/.local/bin
 
+# Fix legacy path for pre_build compatibility
+RUN ln -s /opt/app-root/src /tmp/src && /tmp/scripts/assemble
+
+
 # Assemble the app (run as root to avoid permission issues during pip install)
 RUN /tmp/scripts/assemble
 

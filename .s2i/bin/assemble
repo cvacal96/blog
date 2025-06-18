@@ -1,18 +1,20 @@
 #!/bin/bash
 set -e
 
-# Limpia la carpeta de trabajo por si queda algo (opcional)
+# Limpia la carpeta de trabajo
 rm -rf /opt/app-root/src/*
 
-# Mueve el código fuente que s2i inyecta en /tmp/src a la carpeta de trabajo
-mv /tmp/src/* /opt/app-root/src/
+# Copia todo (archivos, subdirectorios, archivos ocultos) desde /tmp/src
+cp -R /tmp/src/. /opt/app-root/src/
 
-# Opcional: si usas git y quieres limpiar archivos ocultos
+# Elimina carpetas ocultas innecesarias (opcional)
 rm -rf /opt/app-root/src/.git*
 
-# Instalar las dependencias de Python desde requirements.txt
-pip install --no-cache-dir -r /opt/app-root/src/requirements.txt
+# Instala dependencias si existe requirements.txt
+if [ -f /opt/app-root/src/requirements.txt ]; then
+    pip install --no-cache-dir -r /opt/app-root/src/requirements.txt
+fi
 
-# Cambiar permisos para evitar problemas en OpenShift
+# Ajusta permisos
 chown -R 1001:0 /opt/app-root/src
 chmod -R g+w /opt/app-root/src

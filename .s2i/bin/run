@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# Navega al directorio donde está la app
 cd /opt/app-root/src
 
-# Ejecutar comandos de migración y recolectar estáticos solo si quieres (comenta si no)
-# python manage.py migrate --noinput
-# python manage.py collectstatic --noinput
-
-# Arranca el servidor Django (puedes adaptarlo a tu entorno)
 exec python manage.py runserver 0.0.0.0:8080

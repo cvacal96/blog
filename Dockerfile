@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 USER root
 
-# Install required build tools and SQLite headers using APT
+# Install required build tools and SQLite headers
 RUN apt-get update && \
     apt-get install -y gcc make automake autoconf libtool libsqlite3-dev curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -10,34 +10,31 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /opt/app-root/src
 
-# Copy source code to the correct location
+# Copy the project source into the image
 COPY . /opt/app-root/src
 
-# Move S2I scripts
-RUN mv .s2i/bin /tmp/scripts
+# Move S2I scripts to a temporary path
+RUN mv /opt/app-root/src/.s2i/bin /tmp/scripts
 
-# Fix permissions
-RUN rm -rf .git* && \
+# Clean .git files and fix permissions
+RUN rm -rf /opt/app-root/src/.git* && \
     chown -R 1001 /opt/app-root/src && \
     chgrp -R 0 /opt/app-root/src && \
     chmod -R g+w /opt/app-root/src
 
-# Set environment variables
+# Set required environment variables
 ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
     S2I_BASH_ENV=/opt/app-root/etc/scl_enable \
     DISABLE_COLLECTSTATIC=1 \
     DISABLE_MIGRATE=1 \
-    PATH=$PATH:/root/.local/bin
+    PATH=$PATH:/root/.local/bin \
+    PIP_ROOT_USER_ACTION=ignore
 
-# Fix legacy path for pre_build compatibility
-RUN ln -s /opt/app-root/src /tmp/src && /tmp/scripts/assemble
-
-
-# Assemble the app (run as root to avoid permission issues during pip install)
+# Run the assemble script (only once)
 RUN /tmp/scripts/assemble
 
-# Switch to default non-root user
+# Switch to default non-root user for runtime
 USER 1001
 
-# Run the app
+# Run the application
 CMD [ "/tmp/scripts/run" ]

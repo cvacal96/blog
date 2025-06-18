@@ -24,5 +24,4 @@ ENV PATH=$PATH:/root/.local/bin \
 
 USER 1001
 
-# Script de ejecución S2I
-CMD ["/usr/libexec/s2i/run"]
+CMD ["/bin/bash"]

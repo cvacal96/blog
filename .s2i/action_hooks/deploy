@@ -7,6 +7,9 @@ env
 echo " -----> Current working directory."
 pwd
 
+# Save the original working directory so we can return to it
+ORIG_DIR=$(pwd)
+
 echo " -----> Patching SQLite (temporary workaround)..."
 cd /tmp
 
@@ -32,6 +35,9 @@ sqlite3 --version || { echo "SQLite not installed correctly. Exiting."; exit 1; 
 
 echo " -----> Cleaning up build files..."
 rm -rf /tmp/sqlite-autoconf-3500100*
+
+# Restore the original working directory
+cd "$ORIG_DIR"
 
 # Prepare media directory if using persistent volume
 if [ -d /opt/app-root/data ]; then

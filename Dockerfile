@@ -1,6 +1,9 @@
-FROM centos/python-36-centos7:latest
+FROM centos/python-311-centos7:latest
 
 USER root
+
+# Install build tools and SQLite development headers
+RUN yum install -y gcc make automake autoconf libtool sqlite-devel && yum clean all
 
 COPY . /tmp/src
 

@@ -22,6 +22,9 @@ RUN rm -rf /opt/app-root/src/.git* && \
     chgrp -R 0 /opt/app-root/src && \
     chmod -R g+w /opt/app-root/src
 
+# Create /tmp/src with a copy of the source for the assemble script
+RUN mkdir -p /tmp/src && cp -a /opt/app-root/src/. /tmp/src/
+
 # Set required environment variables
 ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
     S2I_BASH_ENV=/opt/app-root/etc/scl_enable \

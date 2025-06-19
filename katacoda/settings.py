@@ -217,7 +217,7 @@ if os.path.exists(BLOG_SETTINGS_FILE):
     with open(BLOG_SETTINGS_FILE) as fp:
         BLOG_SETTINGS = json.load(fp)
 
-BLOG_SITE_NAME = 'Blog de ejemplo para Iotware'
+BLOG_SITE_NAME = 'Blog de ejemplo para la demo de Power 10'
 BLOG_SITE_NAME = BLOG_SETTINGS.get('BLOG_SITE_NAME', BLOG_SITE_NAME)
 BLOG_SITE_NAME = os.environ.get('BLOG_SITE_NAME', BLOG_SITE_NAME)
 
